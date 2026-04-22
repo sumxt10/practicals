@@ -16,30 +16,36 @@ x_train = x_train.reshape(-1, 28*28)
 x_test = x_test.reshape(-1, 28*28)
 
 
-def build_model(activation):
+def build_model():
     model = keras.Sequential([
         keras.Input(shape=(784,)),
-        layers.Dense(128, activation=activation),
-        layers.Dense(64, activation=activation),
+        layers.Dense(128, activation='relu'),
+        layers.Dense(64, activation='relu'),
         layers.Dense(10, activation='softmax')
     ])
-    
-    model.compile(
-        optimizer='adam',
-        loss='sparse_categorical_crossentropy',
-        metrics=['accuracy']
-    )
-    
     return model
 
 
-activations = ['relu', 'sigmoid', 'tanh']
+optimizers = {
+    "SGD": keras.optimizers.SGD(learning_rate=0.01),
+    "Adam": keras.optimizers.Adam(),
+    "RMSprop": keras.optimizers.RMSprop()
+}
+
 histories = {}
 results = {}
 
-for act in activations:
-    print(f"\nTraining with {act.upper()} activation\n")
-    model = build_model(act)
+
+for name, opt in optimizers.items():
+    print(f"\nTraining with {name}\n")
+    
+    model = build_model()
+    
+    model.compile(
+        optimizer=opt,
+        loss='sparse_categorical_crossentropy',
+        metrics=['accuracy']
+    )
     
     history = model.fit(
         x_train, y_train,
@@ -51,20 +57,20 @@ for act in activations:
     
     test_loss, test_acc = model.evaluate(x_test, y_test, verbose=0)
     
-    histories[act] = history
-    results[act] = test_acc
+    histories[name] = history
+    results[name] = test_acc
 
 
 print("\nFinal Test Accuracies:")
-for act in results:
-    print(f"{act.upper()}: {results[act]:.4f}")
+for name in results:
+    print(f"{name}: {results[name]:.4f}")
 
 
 plt.figure()
-for act in activations:
-    plt.plot(histories[act].history['val_accuracy'], label=act.upper())
+for name in histories:
+    plt.plot(histories[name].history['val_accuracy'], label=name)
 
-plt.title("Validation Accuracy Comparison")
+plt.title("Optimizer Comparison - Validation Accuracy")
 plt.xlabel("Epochs")
 plt.ylabel("Accuracy")
 plt.legend()
@@ -72,10 +78,10 @@ plt.show()
 
 
 plt.figure()
-for act in activations:
-    plt.plot(histories[act].history['val_loss'], label=act.upper())
+for name in histories:
+    plt.plot(histories[name].history['val_loss'], label=name)
 
-plt.title("Validation Loss Comparison")
+plt.title("Optimizer Comparison - Validation Loss")
 plt.xlabel("Epochs")
 plt.ylabel("Loss")
 plt.legend()
